@@ -11,7 +11,6 @@
   <img alt="CSS" src="https://img.shields.io/badge/CSS3-custom-242424?style=flat-square&logo=css3&logoColor=white">
   <img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-vanilla-242424?style=flat-square&logo=javascript&logoColor=white">
   <img alt="No build step" src="https://img.shields.io/badge/build-no%20build%20step-242424?style=flat-square">
-  [![Netlify Status](https://api.netlify.com/api/v1/badges/3bf1e0d1-8433-4dd5-bda9-629dfcfd8933/deploy-status)](https://app.netlify.com/projects/stillpad/deploys)
 </p>
 
 [Explore the source](https://github.com/aabhro/Still) · [Open `Still.html`](https://github.com/aabhro/Still/blob/main/Still.html)
