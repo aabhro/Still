@@ -55,10 +55,10 @@ There is no framework, package manager, or build process. Your notes are saved i
 
 Choose from four themes:
 
-- **Monochrome** — near-black, minimal surfaces.
-- **Editorial** — warm, paper-inspired tones.
-- **ChatGPT** — a clean, light interface.
-- **Google** — a bright, neutral interface.
+- **Monochrome** ; near-black, minimal surfaces.
+- **Editorial**  ; warm, paper-inspired tones.
+- **ChatGPT**    ; clean, light interface.
+- **Google**     ; a bright, neutral interface.
 
 Theme and writing preferences are remembered in the current browser.
 
