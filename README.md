@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="720" height="720" alt="Picsart_26-10-16_21-15-23-480" src="https://github.com/user-attachments/assets/9dbd45bf-c7e0-4042-b31c-3c227a8c6a86" />
+<img width="256" height="256" alt="Picsart_26-10-16_21-15-23-480" src="https://github.com/user-attachments/assets/9dbd45bf-c7e0-4042-b31c-3c227a8c6a86" />
 
 ### A quiet space to write.
 
