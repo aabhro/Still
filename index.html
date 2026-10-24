@@ -917,6 +917,771 @@ function copySelectionText(text){const value=String(text||'');if(navigator.clipb
 function openMoveNote(id){const d=documents.find(x=>x.id===id);if(!d)return;const opts=folders.map(f=>`<option value="${esc(f.id)}" ${f.id===d.folderId?'selected':''}>${esc(f.name)}</option>`).join('');openModal('Move note',`<div class="form-field"><label class="form-label" for="moveFolder">Destination folder</label><select id="moveFolder" class="form-select">${opts}</select></div>`,[{label:'Cancel',action:closeModal},{label:'Move note',primary:true,action:()=>{d.folderId=$('#moveFolder').value;activeFolderId=d.folderId;persist();closeModal();renderAll();showToast('Note moved')}}])}
 function initContextMenuInteractions(){document.addEventListener('contextmenu',e=>{if(e.target.closest('#contextMenu,#aiOverlay,#aiReview,#aiSelectionMenu'))return;if(e.target.closest('#aiPromptInput,#aiApiKeyInput,.form-input,.form-textarea,.form-select'))return;e.preventDefault();const items=contextItemsForEvent(e);openContextMenu(e.clientX,e.clientY,items,null)});$('#contextMenu').addEventListener('keydown',e=>{const items=[...$('#contextMenu').querySelectorAll('[data-menu-action]')];const current=items.indexOf(document.activeElement);if(e.key==='Escape'){e.preventDefault();closeContextMenu();return}if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const delta=e.key==='ArrowDown'?1:-1;items[(current+delta+items.length)%items.length]?.focus();return}if(e.key==='Enter'||e.key===' '){if(document.activeElement.matches('[data-menu-action]')){e.preventDefault();document.activeElement.click()}}});document.addEventListener('pointerdown',e=>{if(!e.target.closest('#contextMenu'))closeContextMenu()});}
 
+/*
+ * Still enhancement patch for index.html
+ * Insert this code INSIDE the existing (() => { ... })() script, immediately
+ * before: initAIWriter();initContextMenuInteractions();loadWorkspace();renderAll();
+ * It relies on Still's existing local functions and state, so do not load it as
+ * a separate <script src> file.
+ */
+
+(() => {
+  'use strict';
+
+  /* Theme tokens: unify the editor, menus, modals, graph, calendar and controls. */
+  const stillThemeStyle = document.createElement('style');
+  stillThemeStyle.id = 'still-consistent-theme-fixes';
+  stillThemeStyle.textContent = `
+    :root {
+      --still-ui-bg:#090909;
+      --still-ui-panel:#0d0d0d;
+      --still-ui-raised:#131313;
+      --still-ui-raised-2:#191918;
+      --still-ui-line:#272725;
+      --still-ui-line-soft:#1c1c1a;
+      --still-ui-text:#eeede9;
+      --still-ui-text-soft:#b7b6b0;
+      --still-ui-muted:#85847d;
+      --still-ui-faint:#5f5e58;
+      --still-ui-accent:#e7e5df;
+      --still-ui-accent-ink:#171715;
+      --still-ui-hover:rgba(238,237,233,.055);
+      --still-ui-overlay:rgba(0,0,0,.68);
+      --still-ui-shadow:0 22px 64px rgba(0,0,0,.42);
+      --still-ui-scheme:dark;
+      --ui-bg:var(--still-ui-bg);
+      --ui-surface:var(--still-ui-panel);
+      --ui-surface-2:var(--still-ui-raised);
+      --ui-line:var(--still-ui-line);
+      --ui-text:var(--still-ui-text);
+      --ui-text-soft:var(--still-ui-text-soft);
+      --ui-muted:var(--still-ui-muted);
+      color-scheme:dark;
+    }
+    body[data-theme="monochrome"] {
+      --still-ui-bg:#090909;
+      --still-ui-panel:#0d0d0d;
+      --still-ui-raised:#131313;
+      --still-ui-raised-2:#191918;
+      --still-ui-line:#272725;
+      --still-ui-line-soft:#1c1c1a;
+      --still-ui-text:#eeede9;
+      --still-ui-text-soft:#b7b6b0;
+      --still-ui-muted:#85847d;
+      --still-ui-faint:#5f5e58;
+      --still-ui-accent:#e7e5df;
+      --still-ui-accent-ink:#171715;
+      --still-ui-hover:rgba(238,237,233,.055);
+      --still-ui-overlay:rgba(0,0,0,.68);
+      --still-ui-shadow:0 22px 64px rgba(0,0,0,.42);
+      --still-ui-scheme:dark;
+      color-scheme:dark;
+    }
+    body[data-theme="paper"] {
+      --still-ui-bg:#f5f3ed;
+      --still-ui-panel:#fbfaf6;
+      --still-ui-raised:#eeece5;
+      --still-ui-raised-2:#e7e5dd;
+      --still-ui-line:#d8d5cb;
+      --still-ui-line-soft:#e5e2d9;
+      --still-ui-text:#25241f;
+      --still-ui-text-soft:#494840;
+      --still-ui-muted:#77766e;
+      --still-ui-faint:#96948a;
+      --still-ui-accent:#26251f;
+      --still-ui-accent-ink:#f5f3ed;
+      --still-ui-hover:rgba(38,37,31,.055);
+      --still-ui-overlay:rgba(36,35,29,.3);
+      --still-ui-shadow:0 22px 64px rgba(38,37,31,.16);
+      --still-ui-scheme:light;
+      color-scheme:light;
+    }
+    body[data-theme] { background:var(--still-ui-bg)!important; color:var(--still-ui-text)!important; color-scheme:var(--still-ui-scheme); }
+    body[data-theme] .rail,
+    body[data-theme] .topbar,
+    body[data-theme] .tabbar,
+    body[data-theme] .toolbar,
+    body[data-theme] .editor-footer,
+    body[data-theme] .sidebar,
+    body[data-theme] .panel-head { background:var(--still-ui-panel)!important; border-color:var(--still-ui-line-soft)!important; color:var(--still-ui-text)!important; }
+    body[data-theme] .writing-layout,
+    body[data-theme] .editor-panel,
+    body[data-theme] .preview-panel,
+    body[data-theme] .surface-card,
+    body[data-theme] .stat-card,
+    body[data-theme] .template-card,
+    body[data-theme] .settings-group,
+    body[data-theme] .graph-canvas,
+    body[data-theme] .calendar-day { background:var(--still-ui-panel)!important; border-color:var(--still-ui-line)!important; color:var(--still-ui-text)!important; }
+    body[data-theme] #richEditor,
+    body[data-theme] #sourceEditor,
+    body[data-theme] #editor,
+    body[data-theme] #previewContent,
+    body[data-theme] .editor-surface,
+    body[data-theme] .preview-content,
+    body[data-theme] .markdown-preview { color:var(--still-ui-text)!important; caret-color:var(--still-ui-text)!important; }
+    body[data-theme] #richEditor h1,body[data-theme] #richEditor h2,body[data-theme] #richEditor h3,
+    body[data-theme] #previewContent h1,body[data-theme] #previewContent h2,body[data-theme] #previewContent h3,
+    body[data-theme] .editor-surface h1,body[data-theme] .editor-surface h2,body[data-theme] .editor-surface h3,
+    body[data-theme] .preview-content h1,body[data-theme] .preview-content h2,body[data-theme] .preview-content h3 { color:var(--still-ui-text)!important; }
+    body[data-theme] .note-title,body[data-theme] .utility-title,body[data-theme] .row-title,
+    body[data-theme] .folder-name,body[data-theme] .note-name,body[data-theme] .panel-label { color:var(--still-ui-text-soft)!important; }
+    body[data-theme] .subtitle,body[data-theme] .card-subtitle,body[data-theme] .form-help,
+    body[data-theme] .settings-label,body[data-theme] .panel-meta,body[data-theme] .footer-item,
+    body[data-theme] .ai-help,body[data-theme] .ai-status,body[data-theme] .ai-review-header p,
+    body[data-theme] .ai-prompt-status,body[data-theme] .ai-menu-copy small { color:var(--still-ui-muted)!important; }
+    body[data-theme] .modal,
+    body[data-theme] .context-menu,
+    body[data-theme] .ai-modal,
+    body[data-theme] .ai-settings-panel,
+    body[data-theme] .ai-review-card,
+    body[data-theme] .ai-popover,
+    body[data-theme] .ai-review-text,
+    body[data-theme] still-ai-composer,
+    body[data-theme] still-selection-menu,
+    body[data-theme] still-ai-review,
+    body[data-theme] .context-menu { background:var(--still-ui-panel)!important; color:var(--still-ui-text)!important; border-color:var(--still-ui-line)!important; box-shadow:var(--still-ui-shadow)!important; }
+    body[data-theme] still-ai-writer:not(.is-settings) { background:transparent!important; color:var(--still-ui-text)!important; }
+    body[data-theme] still-ai-writer.is-settings { background:var(--still-ui-overlay)!important; color:var(--still-ui-text)!important; }
+    body[data-theme] .modal-backdrop { background:var(--still-ui-overlay)!important; }
+    body[data-theme] .modal-head,body[data-theme] .modal-actions,
+    body[data-theme] .ai-review-header,body[data-theme] .ai-review-actions { border-color:var(--still-ui-line-soft)!important; }
+    body[data-theme] .form-input,body[data-theme] .form-textarea,body[data-theme] .form-select,
+    body[data-theme] .settings-input,body[data-theme] .settings-select,
+    body[data-theme] .ai-input,body[data-theme] .ai-key-row,
+    body[data-theme] .search-pill,body[data-theme] .top-search-trigger,
+    body[data-theme] .group-pill,body[data-theme] .tool-select,
+    body[data-theme] input,body[data-theme] textarea,body[data-theme] select { color:var(--still-ui-text)!important; color-scheme:var(--still-ui-scheme); }
+    body[data-theme] .form-input,body[data-theme] .form-textarea,body[data-theme] .form-select,
+    body[data-theme] .settings-input,body[data-theme] .settings-select,
+    body[data-theme] .ai-input,body[data-theme] .ai-key-row,
+    body[data-theme] .search-pill,body[data-theme] .top-search-trigger,
+    body[data-theme] .group-pill,body[data-theme] .tool-select { background:var(--still-ui-raised)!important; border-color:var(--still-ui-line)!important; }
+    body[data-theme] .btn,body[data-theme] .action-button,body[data-theme] .icon-button,
+    body[data-theme] .ai-button-secondary,body[data-theme] .tool-btn,body[data-theme] .top-action,
+    body[data-theme] .group-pill button { color:var(--still-ui-text-soft)!important; background:transparent; border-color:transparent!important; }
+    body[data-theme] .btn:hover,body[data-theme] .action-button:hover,body[data-theme] .icon-button:hover,
+    body[data-theme] .tool-btn:hover,body[data-theme] .top-action:hover,body[data-theme] .group-pill button:hover,
+    body[data-theme] .context-menu-item:hover,body[data-theme] .ai-model-option:hover { background:var(--still-ui-hover)!important; color:var(--still-ui-text)!important; }
+    body[data-theme] .btn.primary,body[data-theme] .action-button.primary,body[data-theme] .ai-button-primary { color:var(--still-ui-accent-ink)!important; background:var(--still-ui-accent)!important; border-color:var(--still-ui-accent)!important; }
+    body[data-theme] .note-row,body[data-theme] .folder-row,body[data-theme] .doc-tab { color:var(--still-ui-text-soft)!important; }
+    body[data-theme] .note-row:hover,body[data-theme] .folder-row:hover,body[data-theme] .doc-tab:hover { background:var(--still-ui-hover)!important; }
+    body[data-theme] .note-row.active { background:var(--still-ui-hover)!important; color:var(--still-ui-text)!important; font-weight:600!important; box-shadow:none!important; }
+    body[data-theme] .note-row.active .note-name,body[data-theme] .note-row.active .icon { color:var(--still-ui-text)!important; }
+    body[data-theme] .doc-tab.active { color:var(--still-ui-text)!important; background:var(--still-ui-bg)!important; border-color:var(--still-ui-line)!important; }
+    body[data-theme] .brand-mark { background:transparent!important; border-color:transparent!important; }
+    body[data-theme="monochrome"] .brand-mark img { filter:grayscale(1) brightness(0) invert(1); }
+    body[data-theme="paper"] .brand-mark img { filter:grayscale(1) brightness(0); }
+    body[data-theme] .brand-mark img { display:block; width:18px; height:18px; object-fit:contain; }
+    body[data-theme] .editor-surface a,body[data-theme] .preview-content a,body[data-theme] #richEditor a,body[data-theme] #previewContent a { color:var(--still-ui-text)!important; text-decoration-color:var(--still-ui-muted)!important; }
+    body[data-theme] .editor-surface blockquote,body[data-theme] .preview-content blockquote,body[data-theme] #richEditor blockquote,body[data-theme] #previewContent blockquote { border-left-color:var(--still-ui-line)!important; color:var(--still-ui-text-soft)!important; }
+    body[data-theme] code,body[data-theme] pre { color:var(--still-ui-text)!important; background:var(--still-ui-raised)!important; }
+    body[data-theme] .calendar-grid { gap:5px!important; border-color:var(--still-ui-line-soft)!important; }
+    body[data-theme] .calendar-weekday { color:var(--still-ui-muted)!important; border-color:var(--still-ui-line-soft)!important; font-size:10px!important; }
+    body[data-theme] .calendar-day { min-height:78px!important; display:flex!important; flex-direction:column!important; align-items:flex-start!important; gap:6px!important; padding:9px!important; text-align:left!important; border-radius:10px!important; border:1px solid var(--still-ui-line-soft)!important; background:var(--still-ui-panel)!important; color:var(--still-ui-text-soft)!important; transition:background .16s ease,border-color .16s ease,transform .16s ease!important; }
+    body[data-theme] .calendar-day:hover { background:var(--still-ui-raised)!important; border-color:var(--still-ui-line)!important; transform:translateY(-1px); }
+    body[data-theme] .calendar-day.outside { opacity:.52; }
+    body[data-theme] .calendar-day .day-num { color:var(--still-ui-text-soft)!important; }
+    body[data-theme] .calendar-day.today .day-num { display:grid; place-items:center; min-width:24px; height:24px; padding:0 5px; border-radius:7px; background:var(--still-ui-accent)!important; color:var(--still-ui-accent-ink)!important; }
+    body[data-theme] .calendar-day.is-active-note { border-color:var(--still-ui-accent)!important; box-shadow:inset 0 0 0 1px var(--still-ui-accent)!important; }
+    body[data-theme] .calendar-day .day-note-dot { display:inline-block; width:5px; height:5px; margin-left:7px; border-radius:50%; background:var(--still-ui-text)!important; }
+    body[data-theme] .calendar-day .day-note-label { max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color:var(--still-ui-muted)!important; font-size:10px!important; }
+    body[data-theme] .graph-canvas { position:relative!important; min-height:350px!important; overflow:hidden!important; border-radius:14px!important; border:1px solid var(--still-ui-line-soft)!important; background:var(--still-ui-panel)!important; touch-action:none; }
+    body[data-theme] .graph-canvas svg { display:block; width:100%; min-height:320px; overflow:visible; transform-origin:50% 50%; will-change:transform; }
+    body[data-theme] .graph-edge { stroke:var(--still-ui-muted)!important; stroke-width:1.35!important; opacity:.66!important; }
+    body[data-theme] .graph-node { cursor:pointer; outline:none; }
+    body[data-theme] .graph-node circle { fill:var(--still-ui-raised-2)!important; stroke:var(--still-ui-muted)!important; stroke-width:1.1!important; transition:fill .16s ease,stroke .16s ease,r .16s ease; }
+    body[data-theme] .graph-node text { fill:var(--still-ui-text-soft)!important; font:500 12px "DM Sans",sans-serif!important; user-select:none!important; -webkit-user-select:none!important; pointer-events:none!important; }
+    body[data-theme] .graph-node.is-active circle { fill:var(--still-ui-accent)!important; stroke:var(--still-ui-accent)!important; }
+    body[data-theme] .graph-node.is-active text { fill:var(--still-ui-accent-ink)!important; font-weight:650!important; }
+    body[data-theme] .graph-node:focus-visible circle,body[data-theme] .graph-node:hover circle { stroke:var(--still-ui-text)!important; stroke-width:2!important; }
+    .still-graph-controls { position:absolute; z-index:8; top:10px; right:10px; display:flex; align-items:center; gap:3px; padding:4px; border:1px solid var(--still-ui-line); border-radius:11px; background:var(--still-ui-panel); box-shadow:0 6px 24px rgba(0,0,0,.12); }
+    .still-graph-controls button { min-width:30px; height:28px; padding:0 8px; border:0; border-radius:7px; background:transparent; color:var(--still-ui-text-soft); cursor:pointer; font:500 12px "DM Sans",sans-serif; }
+    .still-graph-controls button:hover { background:var(--still-ui-hover); color:var(--still-ui-text); }
+    .still-graph-controls button:focus-visible { outline:1px solid var(--still-ui-muted); outline-offset:1px; }
+    /* Semantic, editable tables work in the rich editor and remain ordinary HTML tables on export. */
+    body[data-theme] #richEditor table,body[data-theme] #previewContent table,
+    body[data-theme] .editor-surface table,body[data-theme] .preview-content table,
+    body[data-theme] .markdown-preview table { width:100%; max-width:100%; border-collapse:collapse!important; border-spacing:0!important; table-layout:auto!important; margin:1.15em 0 1.35em!important; color:var(--still-ui-text)!important; font-size:.94em!important; background:transparent!important; }
+    body[data-theme] #richEditor th,body[data-theme] #richEditor td,
+    body[data-theme] #previewContent th,body[data-theme] #previewContent td,
+    body[data-theme] .editor-surface th,body[data-theme] .editor-surface td,
+    body[data-theme] .preview-content th,body[data-theme] .preview-content td,
+    body[data-theme] .markdown-preview th,body[data-theme] .markdown-preview td { min-width:78px; padding:10px 12px!important; border:1px solid var(--still-ui-line)!important; color:var(--still-ui-text-soft)!important; text-align:left!important; vertical-align:top!important; overflow-wrap:anywhere; }
+    body[data-theme] #richEditor th,body[data-theme] #previewContent th,
+    body[data-theme] .editor-surface th,body[data-theme] .preview-content th,
+    body[data-theme] .markdown-preview th { color:var(--still-ui-text)!important; background:var(--still-ui-raised)!important; font-weight:650!important; }
+    body[data-theme] #richEditor td:focus,body[data-theme] #richEditor th:focus { outline:2px solid var(--still-ui-muted)!important; outline-offset:-2px!important; background:var(--still-ui-hover)!important; }
+    body[data-theme] #richEditor table p { margin:0!important; }
+    body[data-theme] .table-dialog-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    body[data-theme] .table-dialog-grid .form-field { min-width:0; }
+    body[data-theme] .table-dialog-help { margin:0 0 16px; color:var(--still-ui-muted); font-size:12px; line-height:1.6; }
+    body[data-theme] .table-dialog-check { display:flex; align-items:center; gap:9px; margin-top:14px; font-size:12px; color:var(--still-ui-text-soft); }
+    /* AI suggestions stay inline. Only inserted or changed words receive a soft yellow highlight. */
+    body[data-theme] still-ai-diff.ai-review-diff { display:inline; width:auto; margin:0!important; padding:0!important; color:inherit!important; background:transparent!important; border:0!important; text-decoration:none!important; white-space:normal!important; overflow-wrap:anywhere; }
+    body[data-theme] still-ai-diff.ai-review-diff still-ai-added,
+    body[data-theme] still-ai-diff.ai-review-diff .ai-review-highlight { display:inline!important; border-radius:3px!important; padding:0 .06em!important; margin:0!important; color:#f5e7b2!important; background:rgba(242,198,63,.34)!important; box-shadow:none!important; text-decoration:none!important; }
+    body[data-theme="paper"] still-ai-diff.ai-review-diff still-ai-added,
+    body[data-theme="paper"] still-ai-diff.ai-review-diff .ai-review-highlight { color:#594508!important; background:rgba(232,190,52,.42)!important; }
+    body[data-theme] still-ai-diff.ai-review-diff still-ai-removed,
+    body[data-theme] still-ai-diff.ai-review-diff still-ai-removed-block { display:none!important; }
+    body[data-theme] #aiSourceReview.still-ai-source-comparison { display:block; white-space:pre-wrap; overflow-wrap:anywhere; padding:12px; border:1px solid var(--still-ui-line)!important; border-radius:12px; background:var(--still-ui-panel)!important; color:var(--still-ui-text)!important; line-height:1.75; }
+    body[data-theme] still-ai-inline-review { background:var(--still-ui-panel)!important; color:var(--still-ui-text)!important; border-color:var(--still-ui-line)!important; box-shadow:var(--still-ui-shadow)!important; }
+    body[data-theme] .ai-review-removed { display:none!important; }
+    body[data-theme] .ai-review-added,body[data-theme] .ai-review-highlight { background:rgba(242,198,63,.34)!important; box-shadow:none!important; border-radius:3px!important; }
+    body[data-theme="paper"] .ai-review-added,body[data-theme="paper"] .ai-review-highlight { background:rgba(232,190,52,.42)!important; color:#594508!important; }
+    /* Selected folder and note are identified by brighter text and icons, not a fixed dark tile. */
+    body[data-theme] .folder-row.current { color:var(--still-ui-text)!important; background:var(--still-ui-hover)!important; border-color:transparent!important; }
+    body[data-theme] .folder-row.current .folder-name,body[data-theme] .folder-row.current .folder-icon,body[data-theme] .folder-row.current .folder-chevron { color:var(--still-ui-text)!important; }
+    body[data-theme] .note-row.active { background:transparent!important; border-color:transparent!important; color:var(--still-ui-text)!important; font-weight:600!important; box-shadow:none!important; }
+    body[data-theme] .note-row.active .note-name,body[data-theme] .note-row.active .icon { color:var(--still-ui-text)!important; }
+    /* The search shortcut pill now uses the current theme rather than dark-only colors. */
+    body[data-theme] .top-search-trigger { background:var(--still-ui-raised)!important; color:var(--still-ui-text-soft)!important; border-color:var(--still-ui-line)!important; transition:background .18s ease,color .18s ease,border-color .18s ease; }
+    body[data-theme] .top-search-trigger:hover { background:var(--still-ui-hover)!important; color:var(--still-ui-text)!important; }
+    body[data-theme] .key { background:var(--still-ui-panel)!important; color:var(--still-ui-muted)!important; border:1px solid var(--still-ui-line)!important; }
+    /* A theme-aware rounded-square monogram replaces the image logo. */
+    body[data-theme] .brand-mark { display:grid!important; place-items:center!important; width:31px!important; height:31px!important; border:1px solid var(--still-ui-line)!important; border-radius:10px!important; background:var(--still-ui-accent)!important; color:var(--still-ui-accent-ink)!important; font:700 18px/1 "DM Sans",sans-serif!important; letter-spacing:-.08em!important; text-transform:lowercase!important; }
+    body[data-theme] .brand-mark:hover { background:var(--still-ui-accent)!important; color:var(--still-ui-accent-ink)!important; filter:brightness(1.06); }
+    body[data-theme] .brand-mark img { display:none!important; }
+    /* Wider writing surface reduces the unused right-side gutter on large displays. */
+    body[data-theme] .note-inner { width:100%!important; max-width:none!important; margin:0!important; padding-left:clamp(25px,3vw,54px)!important; padding-right:clamp(25px,3vw,54px)!important; }
+    /* Tables are editable and have a deliberate column-resize cursor at draggable edges. */
+    body[data-theme] #richEditor table,body[data-theme] .editor-surface table { table-layout:fixed!important; }
+    body[data-theme] #richEditor td,body[data-theme] #richEditor th { cursor:text; user-select:text; }
+    body[data-theme] #richEditor.still-table-resizing,body[data-theme] #richEditor.still-table-resizing td,body[data-theme] #richEditor.still-table-resizing th { cursor:col-resize!important; user-select:none!important; }
+    .still-table-resize-indicator { position:fixed; z-index:99999; width:2px; pointer-events:none; opacity:0; background:var(--still-ui-accent); box-shadow:0 0 0 1px rgba(128,128,128,.12); transition:opacity .1s ease; }
+    .still-table-resize-indicator.is-visible { opacity:.95; }
+    /* Subtle, consistent motion without making editing or scrolling feel heavy. */
+    body[data-theme] button,body[data-theme] .note-row,body[data-theme] .folder-row,body[data-theme] .doc-tab,body[data-theme] .top-search-trigger,body[data-theme] .search-pill,body[data-theme] .calendar-day { transition:background-color .16s ease,color .16s ease,border-color .16s ease,opacity .16s ease,transform .16s ease; }
+    body[data-theme] .note-inner.still-entering { animation:stillNoteEnter .2s ease both; }
+    @keyframes stillNoteEnter { from { opacity:.86; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
+    @media(max-width:700px) {
+      body[data-theme] .calendar-day { min-height:54px!important; padding:6px!important; gap:4px!important; }
+      body[data-theme] .calendar-day .day-note-label { display:none!important; }
+      body[data-theme] .graph-canvas { min-height:300px!important; }
+      body[data-theme] still-ai-diff.ai-review-diff { grid-template-columns:minmax(0,1fr)!important; }
+      .still-graph-controls { top:7px; right:7px; }
+    }
+    @media(prefers-reduced-motion:reduce) {
+      body[data-theme] .calendar-day,body[data-theme] .graph-node circle { transition:none!important; }
+    }
+  `;
+  document.head.append(stillThemeStyle);
+
+  /* Use a theme-aware lowercase s in a rounded square as the home mark. */
+  const stillBrand = document.querySelector('.brand-mark');
+  if (stillBrand) {
+    stillBrand.textContent = 's';
+    stillBrand.title = 'Still home';
+    stillBrand.setAttribute('aria-label', 'Still home');
+  }
+
+  /* Freeze each folder's initial display order so editing never moves a note to the top. */
+  const stillOriginalRenderTree = renderTree;
+  const stillTreePositions = new Map();
+  const stillTreeFolderCounts = new Map();
+  renderTree = function (...args) {
+    const result = stillOriginalRenderTree.apply(this, args);
+    const body = document.querySelector('#sidebarBody');
+    if (!body) return result;
+    body.querySelectorAll('.tree-folder').forEach(section => {
+      const folderId = String(section.querySelector('[data-folder-row]')?.dataset.folderRow || '');
+      const container = section.querySelector('.folder-notes');
+      if (!container) return;
+      const rows = [...container.children].filter(row => row.matches('[data-open-note]'));
+      let next = stillTreeFolderCounts.get(folderId) || 0;
+      rows.forEach(row => {
+        const key = `${folderId}::${String(row.dataset.openNote)}`;
+        if (!stillTreePositions.has(key)) stillTreePositions.set(key, next++);
+      });
+      stillTreeFolderCounts.set(folderId, Math.max(next, stillTreeFolderCounts.get(folderId) || 0));
+      rows.sort((a, b) => stillTreePositions.get(`${folderId}::${String(a.dataset.openNote)}`) - stillTreePositions.get(`${folderId}::${String(b.dataset.openNote)}`));
+      rows.forEach(row => container.append(row));
+    });
+    const currentId = String(activeDocId || '');
+    body.querySelectorAll('[data-open-note]').forEach(row => row.classList.toggle('active', String(row.dataset.openNote) === currentId));
+    return result;
+  };
+
+  /* Make calendar days more accessible and visually identify the open daily note. */
+  const stillOriginalRenderCalendar = renderCalendar;
+  renderCalendar = function (...args) {
+    const result = stillOriginalRenderCalendar.apply(this, args);
+    const grid = document.querySelector('#calendarGrid');
+    if (!grid) return result;
+    grid.querySelectorAll('button[data-date]').forEach(button => {
+      const key = button.dataset.date;
+      const date = new Date(key + 'T12:00:00');
+      const note = getDateNote(key);
+      const formattedDate = date.toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+      button.setAttribute('aria-label', note ? `${formattedDate}. Open daily note: ${note.title}` : `${formattedDate}. Create daily note`);
+      button.setAttribute('aria-pressed', String(Boolean(note && note.id === activeDocId)));
+      button.classList.toggle('has-note', Boolean(note));
+      button.classList.toggle('is-active-note', Boolean(note && note.id === activeDocId));
+    });
+    return result;
+  };
+
+  /* Build custom dimensioned Markdown/HTML tables while keeping a native table structure. */
+  insertTable = function () {
+    const wasSource = Boolean(sourceOn);
+    const sourceEditor = document.querySelector('#sourceEditor');
+    const richEditor = document.querySelector('#richEditor');
+    const sourceStart = wasSource && sourceEditor ? sourceEditor.selectionStart : 0;
+    const sourceEnd = wasSource && sourceEditor ? sourceEditor.selectionEnd : 0;
+    let richRange = null;
+    if (!wasSource && richEditor) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount && editorContains(selection.anchorNode, richEditor)) {
+        richRange = selection.getRangeAt(0).cloneRange();
+      } else if (savedRichRange && editorContains(savedRichRange.startContainer, richEditor) && editorContains(savedRichRange.endContainer, richEditor)) {
+        richRange = savedRichRange.cloneRange();
+      }
+    }
+
+    openModal('Insert table', `
+      <p class="table-dialog-help">Choose the dimensions. The result uses a standard editable HTML table in the rich editor and a portable Markdown table in source mode.</p>
+      <div class="table-dialog-grid">
+        <div class="form-field"><label class="form-label" for="stillTableRows">Rows</label><input class="form-input" id="stillTableRows" type="number" min="1" max="30" value="4"></div>
+        <div class="form-field"><label class="form-label" for="stillTableCols">Columns</label><input class="form-input" id="stillTableCols" type="number" min="1" max="12" value="3"></div>
+      </div>
+      <label class="table-dialog-check"><input type="checkbox" id="stillTableHeader" checked> First row is a header</label>
+    `, [
+      { label:'Cancel', action:closeModal },
+      { label:'Insert table', primary:true, action:() => {
+        const rows = Math.max(1, Math.min(30, Number(document.querySelector('#stillTableRows')?.value) || 4));
+        const cols = Math.max(1, Math.min(12, Number(document.querySelector('#stillTableCols')?.value) || 3));
+        const useHeader = Boolean(document.querySelector('#stillTableHeader')?.checked);
+        closeModal();
+
+        if (wasSource && sourceEditor) {
+          const header = Array.from({ length:cols }, (_,i) => `Column ${i + 1}`);
+          const cells = arr => `| ${arr.join(' | ')} |`;
+          const lines = [];
+          if (useHeader) {
+            lines.push(cells(header));
+            lines.push(cells(header.map(() => '---')));
+          }
+          const dataRows = Math.max(0, rows - (useHeader ? 1 : 0));
+          for (let r=0; r<dataRows; r++) lines.push(cells(Array.from({ length:cols }, () => ' ')));
+          const text = '\n' + lines.join('\n') + '\n\n';
+          sourceEditor.focus({ preventScroll:true });
+          sourceEditor.setRangeText(text, sourceStart, sourceEnd, 'end');
+          sourceEditor.dispatchEvent(new Event('input', { bubbles:true }));
+          syncContentFromEditor();
+          renderPreview();
+          renderCounts();
+          showToast('Custom table inserted');
+          return;
+        }
+
+        if (!richEditor) return;
+        const head = useHeader ? `<thead><tr>${Array.from({length:cols},(_,i)=>`<th scope="col">Column ${i+1}</th>`).join('')}</tr></thead>` : '';
+        const dataRows = Math.max(0, rows - (useHeader ? 1 : 0));
+        const body = Array.from({length:dataRows},()=>`<tr>${Array.from({length:cols},()=>'<td><br></td>').join('')}</tr>`).join('');
+        const markup = `<table class="note-table" data-still-table="true">${head}<tbody>${body}</tbody></table><p><br></p>`;
+        richEditor.focus({ preventScroll:true });
+        const selection = window.getSelection();
+        if (richRange && editorContains(richRange.startContainer, richEditor) && editorContains(richRange.endContainer, richEditor)) {
+          selection.removeAllRanges();
+          selection.addRange(richRange);
+        } else if (!(selection && selection.rangeCount && editorContains(selection.anchorNode, richEditor))) {
+          const endRange = document.createRange();
+          endRange.selectNodeContents(richEditor);
+          endRange.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(endRange);
+        }
+        const before = richEditor.querySelectorAll('table[data-still-table]').length;
+        let inserted = false;
+        try { inserted = document.execCommand('insertHTML', false, markup); } catch {}
+        let tables = [...richEditor.querySelectorAll('table[data-still-table]')];
+        let table = tables[before] || tables[tables.length - 1];
+        if (!inserted && !table) {
+          const activeSelection = window.getSelection();
+          const range = activeSelection && activeSelection.rangeCount ? activeSelection.getRangeAt(0) : null;
+          if (range && editorContains(range.commonAncestorContainer, richEditor)) {
+            range.deleteContents();
+            const fragment = range.createContextualFragment(markup);
+            table = fragment.querySelector('table');
+            range.insertNode(fragment);
+          }
+        }
+        if (table) {
+          const targetCell = table.querySelector('th,td');
+          if (targetCell) {
+            const range = document.createRange();
+            range.selectNodeContents(targetCell);
+            range.collapse(false);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+          }
+        }
+        syncContentFromEditor();
+        renderPreview();
+        renderCounts();
+        persist();
+        showToast('Custom table inserted');
+      }}
+    ]);
+  };
+
+  /* Drag the visible table column boundaries to resize cells without disturbing selection. */
+  function installStillTableResizer() {
+    const editor = document.querySelector('#richEditor');
+    if (!editor || editor.dataset.stillTableResizeReady === 'true') return;
+    editor.dataset.stillTableResizeReady = 'true';
+    const indicator = document.createElement('div');
+    indicator.className = 'still-table-resize-indicator';
+    indicator.setAttribute('aria-hidden', 'true');
+    document.body.append(indicator);
+    let hoveredCell = null;
+    let resize = null;
+
+    function getCols(table) {
+      const firstRow = table.rows[0];
+      if (!firstRow || firstRow.cells.length < 2) return null;
+      const count = Math.max(...[...table.rows].map(row => row.cells.length));
+      let group = table.querySelector(':scope > colgroup');
+      if (!group) { group = document.createElement('colgroup'); table.insertBefore(group, table.firstChild); }
+      while (group.children.length < count) group.append(document.createElement('col'));
+      while (group.children.length > count) group.lastElementChild.remove();
+      if (group.dataset.stillSized !== 'true') {
+        const widths = Array.from({length:count}, (_, index) => firstRow.cells[index]?.getBoundingClientRect().width || 1);
+        const total = widths.reduce((sum, width) => sum + width, 0) || count;
+        [...group.children].forEach((col, index) => { col.style.width = `${widths[index] / total * 100}%`; });
+        group.dataset.stillSized = 'true';
+      }
+      return [...group.children];
+    }
+
+    function findBoundary(event) {
+      const cell = event.target?.closest?.('#richEditor td, #richEditor th');
+      if (!cell || !editor.contains(cell)) return null;
+      const table = cell.closest('table');
+      if (!table || table.rows.length < 1) return null;
+      const firstRow = table.rows[0];
+      const count = firstRow.cells.length;
+      if (count < 2) return null;
+      const rect = cell.getBoundingClientRect();
+      const right = rect.right - event.clientX;
+      const left = event.clientX - rect.left;
+      let index = -1;
+      if (right >= -1 && right <= 7 && cell.cellIndex < count - 1) index = cell.cellIndex;
+      else if (left >= -1 && left <= 7 && cell.cellIndex > 0) index = cell.cellIndex - 1;
+      if (index < 0) return null;
+      return {cell, table, index, edge:index === cell.cellIndex ? 'right' : 'left'};
+    }
+
+    function showBoundary(info) {
+      if (!info) {
+        if (hoveredCell) hoveredCell.style.cursor = '';
+        hoveredCell = null;
+        indicator.classList.remove('is-visible');
+        return;
+      }
+      if (hoveredCell && hoveredCell !== info.cell) hoveredCell.style.cursor = '';
+      hoveredCell = info.cell;
+      info.cell.style.cursor = 'col-resize';
+      const tableRect = info.table.getBoundingClientRect();
+      const cellRect = info.cell.getBoundingClientRect();
+      const boundaryX = info.edge === 'right' ? cellRect.right : cellRect.left;
+      indicator.style.left = `${boundaryX - 1}px`;
+      indicator.style.top = `${tableRect.top}px`;
+      indicator.style.height = `${tableRect.height}px`;
+      indicator.classList.add('is-visible');
+    }
+
+    function eventClientX(info) { return info.__clientX ?? Number.NaN; }
+
+    editor.addEventListener('pointermove', event => {
+      if (resize) {
+        const delta = event.clientX - resize.startX;
+        const min = Math.min(70, resize.total / 2);
+        const leftWidth = Math.max(min, Math.min(resize.total - min, resize.leftWidth + delta));
+        const tableWidth = resize.table.getBoundingClientRect().width || resize.total;
+        resize.cols[resize.index].style.width = `${leftWidth / tableWidth * 100}%`;
+        resize.cols[resize.index + 1].style.width = `${(resize.total - leftWidth) / tableWidth * 100}%`;
+        const rect = resize.table.getBoundingClientRect();
+        const cellRect = resize.cell.getBoundingClientRect();
+        indicator.style.left = `${(resize.edge === 'right' ? cellRect.right : cellRect.left) - 1}px`;
+        indicator.style.top = `${rect.top}px`;
+        indicator.style.height = `${rect.height}px`;
+        indicator.classList.add('is-visible');
+        return;
+      }
+      const info = findBoundary(event);
+      if (info) info.__clientX = event.clientX;
+      showBoundary(info);
+      if (info) {
+        const rect = info.cell.getBoundingClientRect();
+        const isRight = info.index === info.cell.cellIndex;
+        indicator.style.left = `${(isRight ? rect.right : rect.left) - 1}px`;
+      }
+    });
+
+    editor.addEventListener('pointerdown', event => {
+      if (event.button !== 0) return;
+      const info = findBoundary(event);
+      if (!info) return;
+      const cols = getCols(info.table);
+      if (!cols || !cols[info.index + 1]) return;
+      const tableWidth = info.table.getBoundingClientRect().width;
+      const leftWidth = cols[info.index].getBoundingClientRect().width || tableWidth / cols.length;
+      const rightWidth = cols[info.index + 1].getBoundingClientRect().width || tableWidth / cols.length;
+      resize = {table:info.table, cell:info.cell, cols, index:info.index, edge:info.edge, startX:event.clientX, leftWidth, total:leftWidth + rightWidth};
+      editor.classList.add('still-table-resizing');
+      info.cell.style.cursor = 'col-resize';
+      indicator.classList.add('is-visible');
+      event.preventDefault();
+      event.stopPropagation();
+      try { editor.setPointerCapture(event.pointerId); } catch {}
+    }, true);
+
+    const finishResize = () => {
+      if (!resize) return;
+      const resizedTable = resize.table;
+      resize = null;
+      editor.classList.remove('still-table-resizing');
+      if (hoveredCell) hoveredCell.style.cursor = '';
+      hoveredCell = null;
+      indicator.classList.remove('is-visible');
+      try { stillSaveTableWidths(resizedTable); syncContentFromEditor(); renderPreview(); renderCounts(); persist(); } catch {}
+      showToast('Table column resized');
+    };
+    editor.addEventListener('pointerup', finishResize);
+    editor.addEventListener('pointercancel', finishResize);
+    editor.addEventListener('pointerleave', () => { if (!resize) showBoundary(null); });
+  }
+  installStillTableResizer();
+
+  const stillTableWidthsStorageKey = 'still.tableWidths.v1';
+  function stillReadTableWidths() {
+    try { const value = JSON.parse(localStorage.getItem(stillTableWidthsStorageKey) || '{}'); return value && typeof value === 'object' ? value : {}; }
+    catch { return {}; }
+  }
+  function stillRestoreTableWidths() {
+    const editor = document.querySelector('#richEditor');
+    const saved = stillReadTableWidths()[String(activeDocId || '')];
+    if (!editor || !saved || typeof saved !== 'object') return;
+    [...editor.querySelectorAll('table')].forEach((table, index) => {
+      const widths = saved[index];
+      if (!Array.isArray(widths) || widths.length < 2) return;
+      const count = Math.max(...[...table.rows].map(row => row.cells.length));
+      let group = table.querySelector(':scope > colgroup');
+      if (!group) { group = document.createElement('colgroup'); table.insertBefore(group, table.firstChild); }
+      while (group.children.length < count) group.append(document.createElement('col'));
+      [...group.children].forEach((col, columnIndex) => {
+        const width = Number(widths[columnIndex]);
+        if (Number.isFinite(width) && width > 0) col.style.width = `${Math.max(6, Math.min(94, width))}%`;
+      });
+      group.dataset.stillSized = 'true';
+    });
+  }
+  function stillSaveTableWidths(table) {
+    try {
+      const editor = document.querySelector('#richEditor');
+      const tables = [...(editor?.querySelectorAll('table') || [])];
+      const tableIndex = tables.indexOf(table);
+      if (tableIndex < 0) return;
+      const group = table.querySelector(':scope > colgroup');
+      if (!group) return;
+      const widths = [...group.children].map(col => parseFloat(col.style.width) || (100 / group.children.length));
+      const all = stillReadTableWidths();
+      const docId = String(activeDocId || '');
+      if (!all[docId] || typeof all[docId] !== 'object') all[docId] = {};
+      all[docId][tableIndex] = widths;
+      localStorage.setItem(stillTableWidthsStorageKey, JSON.stringify(all));
+    } catch {}
+  }
+  const stillOriginalRenderActive = renderActive;
+  renderActive = function (...args) {
+    const result = stillOriginalRenderActive.apply(this, args);
+    requestAnimationFrame(stillRestoreTableWidths);
+    return result;
+  };
+
+  /* Keep note export Markdown-only and remove the extra export format. */
+  exportCurrent = function () {
+    flushIfEditing();
+    const doc = currentDoc();
+    if (!doc) return;
+    exportFile(`${slug(doc.title)}.md`, doc.content || '', 'text/markdown');
+    showToast('Markdown exported');
+  };
+
+  /* Inline changed-word highlights replace the former Original/Suggestion panels. */
+  makeAIWordDiff = function (original, proposed) {
+    const oldText = String(original ?? '');
+    const newText = String(proposed ?? '');
+    const root = document.createElement('still-ai-diff');
+    root.className = 'ai-review-diff still-ai-inline-diff';
+    root.setAttribute('aria-label', 'AI suggestion with changed words highlighted');
+    root.setAttribute('contenteditable', 'false');
+
+    const originalRendered = document.createElement('div');
+    originalRendered.innerHTML = markdownToHTML(oldText);
+    const parsedProposal = document.createElement('div');
+    parsedProposal.innerHTML = markdownToHTML(newText);
+    const hasBlocks = typeof aiOutputNeedsBlocks === 'function' && aiOutputNeedsBlocks(newText);
+    const proposalRendered = document.createElement('div');
+    if (!hasBlocks && parsedProposal.children.length === 1 && parsedProposal.firstElementChild?.tagName === 'P') {
+      while (parsedProposal.firstElementChild.firstChild) proposalRendered.append(parsedProposal.firstElementChild.firstChild);
+    } else {
+      while (parsedProposal.firstChild) proposalRendered.append(parsedProposal.firstChild);
+    }
+    const oldWords = aiTextWordMatches(originalRendered.textContent || '');
+    const newWords = aiTextWordMatches(proposalRendered.textContent || '');
+    const operations = aiWordOperations(oldWords, newWords);
+    const changedIndexes = new Set(operations.filter(op => op.type === 'insert').map(op => op.newIndex));
+
+    /* Work backwards so earlier text offsets remain stable as spans are inserted. */
+    [...changedIndexes].sort((a, b) => b - a).forEach(index => {
+      const word = newWords[index];
+      if (!word) return;
+      const range = aiRangeAtTextOffsets(proposalRendered, word.start, word.end);
+      if (!range || range.collapsed) return;
+      const mark = document.createElement('still-ai-added');
+      mark.className = 'ai-review-added ai-review-highlight';
+      mark.setAttribute('aria-label', `Changed word: ${word.text}`);
+      try {
+        mark.append(range.extractContents());
+        range.insertNode(mark);
+      } catch {}
+    });
+    root.style.display = hasBlocks ? 'block' : 'contents';
+    while (proposalRendered.firstChild) root.append(proposalRendered.firstChild);
+    return root;
+  };
+
+  renderAISourceStreaming = function (state, output) {
+    const preview = document.querySelector('#aiSourceReview');
+    if (!preview) return;
+    preview.replaceChildren();
+    preview.classList.add('ai-source-stream-review', 'still-ai-source-comparison');
+    preview.hidden = false;
+    preview.append(document.createTextNode(state.prefix || ''));
+    preview.append(makeAIWordDiff(state.target?.text || '', String(output || '')));
+    preview.append(document.createTextNode(state.suffix || ''));
+  };
+
+  renderAISourceReview = function (state, output) {
+    const preview = document.querySelector('#aiSourceReview');
+    const source = document.querySelector('#sourceEditor');
+    if (!preview || !source) return;
+    preview.replaceChildren();
+    preview.classList.remove('ai-source-stream-review');
+    preview.classList.add('still-ai-source-comparison');
+    preview.append(document.createTextNode(state.prefix || ''));
+    preview.append(makeAIWordDiff(state.target?.text || '', String(output || '')));
+    preview.append(document.createTextNode(state.suffix || ''));
+    source.classList.add('hidden');
+    preview.hidden = false;
+  };
+
+  const stillOriginalCompleteAIStream = completeAIStream;
+  completeAIStream = function (state, output, partial = false) {
+    const result = stillOriginalCompleteAIStream.apply(this, arguments);
+    if (state?.status === 'pending') {
+      const status = document.querySelector('#aiPromptStatus');
+      if (status) status.textContent = 'Changed words are highlighted in yellow. Accept or discard the edit.';
+      const reviewStatus = document.querySelector('#aiReviewStatus');
+      if (reviewStatus) reviewStatus.textContent = 'Review the suggested text. Changed words are highlighted in yellow.';
+    }
+    return result;
+  };
+
+  /* Graph navigation: zoom buttons, reset and drag-to-pan, preserving node click behavior. */
+  const stillOriginalRenderGraph = renderGraph;
+  renderGraph = function (...args) {
+    const result = stillOriginalRenderGraph.apply(this, args);
+    stillEnhanceGraphCanvas();
+    return result;
+  };
+
+  function stillEnhanceGraphCanvas() {
+    const canvas = document.querySelector('#graphCanvas');
+    if (!canvas) return;
+    if (!canvas.__stillGraphState) {
+      canvas.__stillGraphState = { scale:1, x:0, y:0, dragging:false, moved:false, startX:0, startY:0, baseX:0, baseY:0, suppressClickUntil:0 };
+      const state = canvas.__stillGraphState;
+      canvas.addEventListener('pointerdown', event => {
+        if (event.button !== 0 || event.target.closest('.still-graph-controls,.graph-node')) return;
+        state.dragging = true;
+        state.moved = false;
+        state.startX = event.clientX;
+        state.startY = event.clientY;
+        state.baseX = state.x;
+        state.baseY = state.y;
+        try { canvas.setPointerCapture(event.pointerId); } catch {}
+      });
+      canvas.addEventListener('pointermove', event => {
+        if (!state.dragging) return;
+        const dx = event.clientX - state.startX;
+        const dy = event.clientY - state.startY;
+        if (Math.abs(dx) + Math.abs(dy) > 4) state.moved = true;
+        if (state.moved) {
+          state.x = state.baseX + dx;
+          state.y = state.baseY + dy;
+          stillApplyGraphTransform(canvas);
+        }
+      });
+      const stopDrag = event => {
+        if (!state.dragging) return;
+        state.dragging = false;
+        if (state.moved) state.suppressClickUntil = performance.now() + 260;
+        try { canvas.releasePointerCapture(event.pointerId); } catch {}
+      };
+      canvas.addEventListener('pointerup', stopDrag);
+      canvas.addEventListener('pointercancel', stopDrag);
+      canvas.addEventListener('click', event => {
+        if (state.suppressClickUntil && performance.now() < state.suppressClickUntil) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          state.suppressClickUntil = 0;
+        }
+      }, true);
+      canvas.addEventListener('wheel', event => {
+        if (!event.ctrlKey && !event.metaKey) return;
+        event.preventDefault();
+        state.scale = Math.max(.55, Math.min(2.25, state.scale * (event.deltaY < 0 ? 1.1 : .9)));
+        stillApplyGraphTransform(canvas);
+      }, { passive:false });
+    }
+
+    const svg = canvas.querySelector('svg');
+    canvas.querySelector('.still-graph-controls')?.remove();
+    if (!svg) return;
+
+    const controls = document.createElement('div');
+    controls.className = 'still-graph-controls';
+    controls.setAttribute('aria-label', 'Graph navigation');
+    controls.innerHTML = '<button type="button" data-graph-zoom="out" aria-label="Zoom out" title="Zoom out">−</button><button type="button" data-graph-zoom="in" aria-label="Zoom in" title="Zoom in">+</button><button type="button" data-graph-zoom="reset" title="Reset view">Reset</button>';
+    canvas.append(controls);
+    controls.querySelectorAll('[data-graph-zoom]').forEach(button => {
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        const state = canvas.__stillGraphState;
+        if (button.dataset.graphZoom === 'in') state.scale = Math.min(2.25, state.scale * 1.15);
+        else if (button.dataset.graphZoom === 'out') state.scale = Math.max(.55, state.scale / 1.15);
+        else { state.scale = 1; state.x = 0; state.y = 0; }
+        stillApplyGraphTransform(canvas);
+      });
+    });
+    stillApplyGraphTransform(canvas);
+  }
+
+  function stillApplyGraphTransform(canvas) {
+    const state = canvas.__stillGraphState;
+    const svg = canvas.querySelector('svg');
+    if (!state || !svg) return;
+    svg.style.transformOrigin = '50% 50%';
+    svg.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+  }
+})();
+
+
 initAIWriter();initContextMenuInteractions();loadWorkspace();renderAll();$('#topSearchButton').setAttribute('title','Search all notes (Ctrl+K)');
 })();
 </script>
@@ -1124,6 +1889,170 @@ body[data-theme="paper"] .ai-menu-copy small{color:var(--popup-muted)!important}
 body[data-theme="paper"] .note-row.active{background:transparent!important;border-color:transparent!important;color:var(--text)!important}
 @media(prefers-reduced-motion:reduce){.modal-backdrop,.modal,.ai-settings-panel,still-ai-composer{backdrop-filter:none!important;animation:none!important;transition:none!important}}
 </style>
+
+<style id="still-standalone-final-overrides">
+/* Final theme corrections load after Still's built-in style layers. */
+body[data-theme] .brand-mark {
+  display:grid!important;place-items:center!important;flex:none!important;
+  width:31px!important;height:31px!important;min-width:31px!important;
+  border:1px solid var(--still-ui-line)!important;border-radius:10px!important;
+  background:var(--still-ui-bg)!important;color:var(--still-ui-text)!important;
+  font:700 18px/1 "DM Sans",Inter,system-ui,sans-serif!important;
+  letter-spacing:-.08em!important;text-transform:lowercase!important;
+}
+body[data-theme] .brand-mark:hover { background:var(--still-ui-bg)!important;color:var(--still-ui-text)!important;filter:brightness(1.04); }
+body[data-theme] .brand-mark svg,body[data-theme] .brand-mark img { display:none!important; }
+
+/* Keep the active note in place. Indicate selection through readable text and icon color only. */
+body[data-theme] .note-row.active,
+body[data-theme="paper"] .note-row.active {
+  background:transparent!important;border-color:transparent!important;box-shadow:none!important;
+  color:var(--still-ui-text)!important;font-weight:600!important;
+}
+body[data-theme] .note-row.active:before { display:none!important;content:none!important; }
+body[data-theme] .note-row.active .note-name,
+body[data-theme] .note-row.active .icon { color:var(--still-ui-text)!important; }
+body[data-theme] .folder-row.current,
+body[data-theme="paper"] .folder-row.current {
+  background:var(--still-ui-hover)!important;border-color:transparent!important;color:var(--still-ui-text)!important;
+}
+body[data-theme] .folder-row.current .folder-name,
+body[data-theme] .folder-row.current .folder-icon,
+body[data-theme] .folder-row.current .folder-chevron { color:var(--still-ui-text)!important; }
+
+/* The Ctrl+K trigger and shortcut key follow the currently selected theme. */
+body[data-theme] .top-search-trigger {
+  background:var(--still-ui-raised)!important;color:var(--still-ui-text-soft)!important;
+  border-color:var(--still-ui-line)!important;transition:background-color .16s ease,color .16s ease,border-color .16s ease;
+}
+body[data-theme] .top-search-trigger:hover { background:var(--still-ui-hover)!important;color:var(--still-ui-text)!important; }
+body[data-theme] .top-search-trigger .key,
+body[data-theme] .key {
+  background:var(--still-ui-panel)!important;color:var(--still-ui-muted)!important;
+  border:1px solid var(--still-ui-line)!important;
+}
+
+/* Use the full available editor width instead of centering a narrow writing column. */
+body[data-theme] .note-scroll { width:100%;min-width:0; }
+body[data-theme] .note-inner {
+  width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;
+  padding-left:clamp(24px,3vw,52px)!important;padding-right:clamp(24px,3vw,52px)!important;
+}
+body[data-theme] #richEditorWrap,
+body[data-theme] #richEditor,
+body[data-theme] #sourceEditor { width:100%;max-width:none;min-width:0; }
+@media(max-width:780px) {
+  body[data-theme] .note-inner { padding-left:22px!important;padding-right:22px!important; }
+}
+@media(max-width:570px) {
+  body[data-theme] .note-inner { padding-left:18px!important;padding-right:18px!important; }
+}
+
+/* Tables remain native/editable and resize from their column boundaries. */
+body[data-theme] #richEditor table { width:100%!important;max-width:100%!important;table-layout:fixed!important;border-collapse:collapse!important; }
+body[data-theme] #richEditor td,body[data-theme] #richEditor th { cursor:text;user-select:text; }
+body[data-theme] #richEditor td:focus,body[data-theme] #richEditor th:focus {
+  outline:none!important;box-shadow:none!important;background:var(--still-ui-hover)!important;
+}
+body[data-theme] #richEditor.still-table-resizing,
+body[data-theme] #richEditor.still-table-resizing td,
+body[data-theme] #richEditor.still-table-resizing th { cursor:col-resize!important;user-select:none!important; }
+.still-table-resize-indicator { pointer-events:none!important; }
+
+/* The proposed text replaces the selected text in the review. Only new/changed words are yellow. */
+body[data-theme] still-ai-diff.ai-review-diff { color:inherit!important;background:transparent!important;border:0!important;text-decoration:none!important; }
+body[data-theme] still-ai-diff.ai-review-diff still-ai-removed,
+body[data-theme] still-ai-diff.ai-review-diff still-ai-removed-block,
+body[data-theme] still-ai-diff.ai-review-diff del { display:none!important; }
+body[data-theme] still-ai-diff.ai-review-diff still-ai-added,
+body[data-theme] still-ai-diff.ai-review-diff still-ai-changed,
+body[data-theme] still-ai-diff.ai-review-diff .ai-review-highlight {
+  display:inline!important;background:rgba(242,198,63,.34)!important;color:#f5e7b2!important;
+  box-shadow:none!important;border:0!important;border-radius:3px!important;text-decoration:none!important;
+  padding:0 .06em!important;margin:0!important;-webkit-box-decoration-break:clone;box-decoration-break:clone;
+}
+body[data-theme="paper"] still-ai-diff.ai-review-diff still-ai-added,
+body[data-theme="paper"] still-ai-diff.ai-review-diff still-ai-changed,
+body[data-theme="paper"] still-ai-diff.ai-review-diff .ai-review-highlight {
+  background:rgba(232,190,52,.42)!important;color:#594508!important;
+}
+body[data-theme] .ai-review-added,body[data-theme] .ai-review-highlight { box-shadow:none!important; }
+
+/* Refined motion, with reduced-motion support. */
+body[data-theme] button,body[data-theme] .note-row,body[data-theme] .folder-row,
+body[data-theme] .doc-tab,body[data-theme] .top-search-trigger,body[data-theme] .calendar-day {
+  transition:background-color .16s ease,color .16s ease,border-color .16s ease,opacity .16s ease,transform .16s ease;
+}
+@media(prefers-reduced-motion:reduce) {
+  body[data-theme] button,body[data-theme] .note-row,body[data-theme] .folder-row,
+  body[data-theme] .doc-tab,body[data-theme] .top-search-trigger,body[data-theme] .calendar-day {
+    transition:none!important;animation:none!important;
+  }
+}
+
+
+/* Correct the outer flex item: it was shrink-wrapping to the toolbar instead of filling the workspace. */
+#editorView {
+  width:100%!important;
+  min-width:0!important;
+}
+#editorView > #primaryEditorColumn {
+  flex:1 1 0%!important;
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+}
+#primaryEditorColumn > #editorColumns {
+  flex:1 1 0%!important;
+  width:100%!important;
+  min-width:0!important;
+}
+#editorColumns {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  width:100%!important;
+  min-width:0!important;
+}
+#editorColumns.with-preview:not(:has(#previewColumn.hidden)) {
+  grid-template-columns:minmax(0,1fr) minmax(260px,38%)!important;
+}
+#editorColumns.with-preview:has(#previewColumn.hidden) {
+  grid-template-columns:minmax(0,1fr)!important;
+}
+#editorColumns > #richEditorColumn {
+  grid-column:1!important;
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+}
+#richEditorColumn,
+#noteScroll,
+#noteScroll > .note-inner,
+#richEditorWrap,
+#richEditor,
+#sourceEditor {
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+#noteScroll > .note-inner {
+  margin-left:0!important;
+  margin-right:0!important;
+  padding-left:clamp(20px,2.4vw,40px)!important;
+  padding-right:clamp(20px,2.4vw,40px)!important;
+}
+#richEditorWrap { display:block!important; flex:1 0 auto; }
+#richEditor { display:block!important; }
+@media(max-width:780px) {
+  #noteScroll > .note-inner { padding-left:22px!important; padding-right:22px!important; }
+}
+@media(max-width:570px) {
+  #noteScroll > .note-inner { padding-left:18px!important; padding-right:18px!important; }
+}
+
+</style>
+
 </body>
 </html>
 
