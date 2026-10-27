@@ -13,7 +13,9 @@
   <img alt="No build step" src="https://img.shields.io/badge/build-no%20build%20step-242424?style=flat-square">
 </p>
 
-[Explore the source](https://github.com/aabhro/Still) · [Open `Still.html`](https://github.com/aabhro/Still/blob/main/Still.html)
+[Try Still](https://stillpad.netlify.app/) · [Explore the source](https://github.com/aabhro/Still) · [Code of Conduct](CODE_OF_CONDUCT.md)
+
+<p><a href="https://www.netlify.com/">This site is powered by Netlify</a></p>
 
 </div>
 
@@ -86,7 +88,7 @@ AI features are optional. The rest of the editor does not require a Gemini key.
    cd Still
    ```
 
-2. Open `Still.html` in a modern browser.
+2. Open `index.html` in a modern browser.
 
 For the most reliable local setup, serve the folder over localhost instead of opening the file directly:
 
@@ -94,15 +96,13 @@ For the most reliable local setup, serve the folder over localhost instead of op
 python -m http.server 8000
 ```
 
-Then visit **http://localhost:8000/Still.html**.
+Then visit **http://localhost:8000/**.
 
 No `npm install`, compilation, or build command is required.
 
 ### Deploy
 
-Still is a static website, so it can be hosted on GitHub Pages, Netlify, or another static host. Deploy the project files together and open `Still.html` at the deployed URL. To make the site root load Still automatically, rename or copy the entry file to `index.html` and check that the referenced manifest, icons, and service worker remain at the expected paths.
-
-The HTML references `manifest.webmanifest`, `sw.js`, `icon.svg`, and `apple-touch-icon.png`. Installable-app and service-worker behaviour depends on serving the app over HTTPS or localhost and having the referenced companion files available.
+Still is a static website, so it can be hosted on GitHub Pages, Netlify, or another static host. The repository's root `index.html` is the app entry point, so the deployed site should load Still automatically. No build command is required.
 
 ## Keyboard shortcuts
 
