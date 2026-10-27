@@ -261,6 +261,26 @@ body[data-theme="paper"] .modal,body[data-theme="paper"] .context-menu,body[data
 
 
 
+
+<style id="netlify-attribution-style">
+.netlify-attribution {
+  flex:none;
+  color:var(--muted,#777770);
+  font-size:9px;
+  line-height:1.4;
+  white-space:nowrap;
+  text-decoration:none;
+  opacity:.82;
+  transition:color .16s ease,opacity .16s ease;
+}
+.netlify-attribution:hover { color:var(--text,#eeede9); opacity:1; text-decoration:underline; text-underline-offset:3px; }
+@media(max-width:570px) {
+  .editor-footer .footer-item:not(#saveStatus), .editor-footer .push { display:none!important; }
+  .netlify-attribution { font-size:8px; }
+}
+@media(prefers-reduced-motion:reduce) { .netlify-attribution { transition:none; } }
+</style>
+
 </head>
 <body>
 <div class="app" id="app">
@@ -307,7 +327,7 @@ body[data-theme="paper"] .modal,body[data-theme="paper"] .context-menu,body[data
       </div>
     </section>
     <section class="utility-view hidden" id="utilityView" aria-live="polite"></section>
-    <footer class="editor-footer" id="editorFooter"><span class="footer-item"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h13"/></svg><span id="wordCount">0 words</span></span><span class="footer-item" id="charCount">0 chars</span><span class="footer-item" id="readingTime">1 min read</span><span class="push"></span><span class="footer-item" id="activeFolderStatus">Notes</span><span class="footer-item" id="saveStatus">Saved locally</span></footer>
+    <footer class="editor-footer" id="editorFooter"><span class="footer-item"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h13"/></svg><span id="wordCount">0 words</span></span><span class="footer-item" id="charCount">0 chars</span><span class="footer-item" id="readingTime">1 min read</span><span class="push"></span><span class="footer-item" id="activeFolderStatus">Notes</span><span class="footer-item" id="saveStatus">Saved locally</span><a class="netlify-attribution" href="https://www.netlify.com/" target="_blank" rel="noopener noreferrer">This site is powered by Netlify</a></footer>
   </main>
 </div>
 <still-dialog class="modal-backdrop" id="modalBackdrop" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><header class="modal-head"><div id="modalTitle" class="modal-title">Dialog</div><button class="small-icon" id="modalClose" aria-label="Close dialog"><svg class="icon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></header><div class="modal-body" id="modalBody"></div><footer class="modal-actions" id="modalActions"></footer></section></still-dialog>
